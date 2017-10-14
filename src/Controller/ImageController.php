@@ -43,7 +43,7 @@ class ImageController extends Controller
 
                     // 4. Add the image to the collection (specified by profile)
                     $imagingResult = $imaging->indexFaces([
-                        'CollectionId' => $user->aws_collection_id], // TODO: Check this!
+                        'CollectionId' => $user->aws_collection_id, // TODO: Check this!
                         'Image'        => [
                             'S3Object' => [
                                 'Bucket' => $this->container->get('settings')['aws']['bucket'],

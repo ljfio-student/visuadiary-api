@@ -1,0 +1,15 @@
+{
+    "name": "visuadiary/api",
+    "description": "Visuadiary API",
+    "type": "project",
+    "license": "Proprietary",
+    "authors": [
+        {
+            "name": "Luke Fisher",
+            "email": "mail@lukefisher.me"
+        }
+    ],
+    "require": {
+        "aws/aws-sdk-php": "^3.36"
+    }
+}

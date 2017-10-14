@@ -14,12 +14,16 @@ $container['logger'] = function ($c) {
     return $logger;
 };
 
-$container['dynamodb'] = function ($c) {
-    $settings = $c->get('settings')['aws']['dynamodb'];
+$container['db'] = function ($c) {
+    $settings = $c->get('settings')['database'];
 
-    $client = new Aws\DynamoDb\DynamoDbClient($settings);
+    $capsule = new \Illuminate\Database\Capsule\Manager;
+    $capsule->addConnection($settings);
 
-    return $client;
+    $capsule->setAsGlobal();
+    $capsule->bootEloquent();
+
+    return $capsule;
 };
 
 $container['s3'] = function ($c) {

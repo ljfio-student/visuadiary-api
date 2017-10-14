@@ -12,15 +12,15 @@ class ImageController extends Controller
         $user = $request->getAttribute('user');
 
         if (!isset($user)) {
-            $database = $this->container->get('dynamodb');
+            $database = $this->container->get('database');
 
             // 1. Check visitor exists and get collection/face id
-            $databaseResult = $database->getItem([
-                'TableName' => 'Visitor',
-                'Key'       => [
-                    'Id' => ['S' => $args['id']],
-                ],
-            ]);
+            $databaseResult = $database->table('visitor')
+                ->where([
+                    ['id' => $args['id']],
+                    ['user_id' => $args['user_id']],
+                ])
+                ->first();
 
             if ($databaseResult != null) {
                 $body = $request->getBody();
@@ -54,20 +54,13 @@ class ImageController extends Controller
 
                     if ($imagingResult != null) {
                         // 5. Put face id on the visitor data
-                        $database->updateItem([
-                            'ExpressionAttributeNames'  => [
-                                '#K' => 'S3Key',
-                            ],
-                            'ExpressionAttributeValues' => [
-                                ':k' => ['S' => $key],
-                            ],
-                            'Key'                       => [
-                                'Id' => ['S' => $args['id']],
-                            ],
-                            'ReturnValues'              => 'ALL_NEW',
-                            'TableName'                 => 'Visitor',
-                            'UpdateExpression'          => 'SET #K = :k',
-                        ]);
+                        $database->table('visitor')
+                            ->where([
+                                ['id', '=', $args['id']],
+                            ])
+                            ->update([
+                                'S3Key' => $key,
+                            ]);
 
                         return $response;
                     } else {
@@ -120,22 +113,14 @@ class ImageController extends Controller
 
                 if ($imagingResult != null) {
                     // 5. Put face id on the visitor data
-                    $database->updateItem([
-                        'ExpressionAttributeNames'  => [
-                            '#K' => 'S3Key',
-                            '#F' => 'FaceId',
-                        ],
-                        'ExpressionAttributeValues' => [
-                            ':k' => ['S' => $key],
-                            ':f' => ['S' => $imagingResult->FaceRecords[0]->Face->FaceId],
-                        ],
-                        'Key'                       => [
-                            'Id' => ['S' => $args['id']],
-                        ],
-                        'ReturnValues'              => 'ALL_NEW',
-                        'TableName'                 => 'User',
-                        'UpdateExpression'          => 'SET #K = :k, #F = :f',
-                    ]);
+                    $database->table('user')
+                        ->where([
+                            ['id' => $args['id']],
+                        ])
+                        ->update([
+                            ['aws_s3_key' => $key],
+                            ['aws_face_id' => $imagingResult->FaceRecords[0]->Face->FaceId],
+                        ]);
 
                     return $response;
                 } else {
@@ -154,7 +139,7 @@ class ImageController extends Controller
         $user = $request->getAttribute('user');
 
         if (!isset($user)) {
-            $database = $this->container->get('dynamodb');
+            $database = $this->container->get('database');
 
             if ($databaseResult != null) {
                 $body = $request->getBody();
@@ -178,32 +163,31 @@ class ImageController extends Controller
                         continue;
                     }
 
-                    $matchResult = $database->query([
-                        'TableName'                 => 'Visitor',
-                        'ExpressionAttributeValues' => [
-                            ':fi' => ['S' => $match->Face->FaceId],
-                        ],
-                        'KeyConditionExpression'    => 'FaceId = :fi',
-                    ]);
+                    $matchResult = $database->table('visitor')
+                        ->where([
+                            ['face_id', '=', $match->Face->FaceId],
+                        ])
+                        ->first();
 
                     if ($matchResult != null) {
                         array_push($faces, [
-                            'Name'      => ['S' => $matchResult->Item->Name],
-                            'VisitorId' => ['S' => $matchResult->Item->Id],
+                            'name'       => $matchResult->Item->Name,
+                            'visitor_id' => $matchResult->Item->Id,
                         ]);
                     }
                 }
 
                 // 6. Insert the data into the datbase
-                $insertResult = $database->putItem([
-                    'TableName'    => 'Diary',
-                    'Item'         => [
-                        'Date'   => ['S' => date('Y-m-d')],
-                        'UserId' => ['S' => $user->Item->Id],
-                        'Faces'  => ['M' => $faces],
-                    ],
-                    'ReturnValues' => 'ALL_NEW',
-                ]);
+                $insertResult = $database->table('diary')
+                    ->insert([
+                        'date'    => date('Y-m-d'),
+                        'user_id' => $user->Item->Id,
+                    ]);
+
+                // 7. Insert into the diart_visitor table
+                if ($insertResult != null) {
+
+                }
 
                 if ($insertResult != null) {
                     return $response;

@@ -19,18 +19,16 @@ class AuthenticationMiddleware
     {
         $authentication_key = $request->getHeader('Authentication');
 
-        $client = $this->container->get('dynamodb');
+        $database = $this->container->get('database');
 
-        $user = $client->getItem([
-            'TableName' => 'User',
-            'KeyConditionExpression' => 'contains(Sessions, :s)',
-            'ExpressionAttributeValues' => [
-                ':s' => $authentication_key,
-            ],
-        ]);
+        $user = $database->table('session')
+            ->where([
+                ['token', '=', $authentication_key]
+            ])
+            ->first();
 
         if ($user != null) {
-            $request->withAttribute('user', $user);
+            $request = $request->withAttribute('user', $user);
         }
 
         return $next($request, $response);

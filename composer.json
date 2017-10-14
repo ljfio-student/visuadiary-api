@@ -10,6 +10,14 @@
         }
     ],
     "require": {
-        "aws/aws-sdk-php": "^3.36"
+        "php": ">=5.5.0",
+        "aws/aws-sdk-php": "^3.36",
+        "slim/slim": "^3.0",
+        "monolog/monolog": "^1.23"
+    },
+    "autoload": {
+        "psr-4": {
+            "Site\\": "src/"
+        }
     }
 }

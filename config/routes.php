@@ -15,4 +15,6 @@ $app->put('/profile', '\Site\Controller\ProfileController:update');
 $app->post('/profile/image', '\Site\Controller\ImageController:profile');
 
 $app->post('/entry', '\Site\Controller\ImageController:entry');
-$app->get('/diary', '\Site\Controller\DiaryController:get');
+
+$app->get('/diary', '\Site\Controller\DiaryController:list');
+$app->get('/diary/:id', '\Site\Controller\DiaryController:get');

@@ -34,7 +34,7 @@ class ImageController extends Controller
                 $storageResult = $storage->putObject([
                     'Body'   => $body,
                     'Key'    => $key,
-                    'Bucket' => $user->Item->Bucket['S'], // TODO: Check this
+                    'Bucket' => $this->container->get('settings')['aws']['bucket'],
                 ]);
 
                 if ($storageResult != null) {
@@ -46,7 +46,7 @@ class ImageController extends Controller
                         'CollectionId' => $user->Item->CollectionId['S'], // TODO: Check this!
                         'Image'        => [
                             'S3Object' => [
-                                'Bucket' => $user->Item->Bucket['S'],
+                                'Bucket' => $this->container->get('settings')['aws']['bucket'],
                                 'Name'   => $key,
                             ],
                         ],
@@ -93,7 +93,7 @@ class ImageController extends Controller
             $storageResult = $storage->putObject([
                 'Body'   => $body,
                 'Key'    => $key,
-                'Bucket' => $user->Item->Bucket['S'], // TODO: Check this
+                'Bucket' => $this->container->get('settings')['aws']['bucket'],
             ]);
 
             if ($storageResult != null) {
@@ -105,7 +105,7 @@ class ImageController extends Controller
                     'CollectionId' => $user->Item->CollectionId['S'], // TODO: Check this!
                     'Image'        => [
                         'S3Object' => [
-                            'Bucket' => $user->Item->Bucket['S'],
+                            'Bucket' => $this->container->get('settings')['aws']['bucket'],
                             'Name'   => $key,
                         ],
                     ],

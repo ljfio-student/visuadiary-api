@@ -13,6 +13,7 @@ return [
 
         // AWS settings
         'aws'                    => [
+            'bucket'      => 'visuadiarybucket',
             // Simple Storage Service
             's3'          => [
                 'profile' => 'visuadiary',

@@ -25,6 +25,8 @@ class AuthenticationMiddleware
             ->where([
                 ['token', '=', $authentication_key]
             ])
+            ->join('user', 'user.id', '=', 'session.user_id')
+            ->select('user.*')
             ->first();
 
         if ($user != null) {

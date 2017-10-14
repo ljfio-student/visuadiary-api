@@ -43,7 +43,7 @@ class ImageController extends Controller
 
                     // 4. Add the image to the collection (specified by profile)
                     $imagingResult = $imaging->indexFaces([
-                        'CollectionId' => $user->Item->CollectionId['S'], // TODO: Check this!
+                        'CollectionId' => $user->aws_collection_id], // TODO: Check this!
                         'Image'        => [
                             'S3Object' => [
                                 'Bucket' => $this->container->get('settings')['aws']['bucket'],
@@ -59,7 +59,7 @@ class ImageController extends Controller
                                 ['id', '=', $args['id']],
                             ])
                             ->update([
-                                'S3Key' => $key,
+                                'aws_s3_key' => $key,
                             ]);
 
                         return $response;
@@ -102,7 +102,7 @@ class ImageController extends Controller
 
                 // 4. Add the image to the collection (specified by profile)
                 $imagingResult = $imaging->indexFaces([
-                    'CollectionId' => $user->Item->CollectionId['S'], // TODO: Check this!
+                    'CollectionId' => $user->aws_collection_id, // TODO: Check this!
                     'Image'        => [
                         'S3Object' => [
                             'Bucket' => $this->container->get('settings')['aws']['bucket'],
@@ -118,8 +118,8 @@ class ImageController extends Controller
                             ['id' => $args['id']],
                         ])
                         ->update([
-                            ['aws_s3_key' => $key],
-                            ['aws_face_id' => $imagingResult->FaceRecords[0]->Face->FaceId],
+                            'aws_s3_key' => $key,
+                            'aws_face_id' => $imagingResult->FaceRecords[0]->Face->FaceId,
                         ]);
 
                     return $response;
@@ -141,17 +141,31 @@ class ImageController extends Controller
         if (!isset($user)) {
             $database = $this->container->get('database');
 
-            if ($databaseResult != null) {
-                $body = $request->getBody();
+            $body = $request->getBody();
 
+            $storage = $this->container->get('s3');
+
+            $key = uniqid("d_"); // Unique key name for object
+
+            // 2. Upload the image into S3
+            $storageResult = $storage->putObject([
+                'Body'   => $body,
+                'Key'    => $key,
+                'Bucket' => $this->container->get('settings')['aws']['bucket'],
+            ]);
+
+            if ($storageResult != null) {
                 // TODO: 3. Remove any instance of face id (if any)
                 $imaging = $this->container->get('rekognition');
 
                 // 4. Add the image to the collection (specified by profile)
                 $imagingResult = $imaging->searchFacesByImage([
-                    'CollectionId' => $user->Item->CollectionId['S'], // TODO: Check this!
+                    'CollectionId' => $user->aws_collection_id, // TODO: Check this!
                     'Image'        => [
-                        'Bytes' => $body,
+                        'S3Object' => [
+                            'Bucket' => $this->container->get('settings')['aws']['bucket'],
+                            'Name'   => $key,
+                        ],
                     ],
                 ]);
 
@@ -159,13 +173,13 @@ class ImageController extends Controller
 
                 // 5. Find the information of all of the users that were in the photo
                 foreach ($imagingResult->FaceMatches as $match) {
-                    if ($user->Item->FaceId == $match->Face->FaceId) {
+                    if ($user->aws_face_id == $match->Face->FaceId) {
                         continue;
                     }
 
                     $matchResult = $database->table('visitor')
                         ->where([
-                            ['face_id', '=', $match->Face->FaceId],
+                            ['aws_face_id', '=', $match->Face->FaceId],
                         ])
                         ->first();
 
@@ -178,23 +192,30 @@ class ImageController extends Controller
                 }
 
                 // 6. Insert the data into the datbase
-                $insertResult = $database->table('diary')
-                    ->insert([
+                $diaryEntry = $database->table('diary')
+                    ->insertGetId([
                         'date'    => date('Y-m-d'),
-                        'user_id' => $user->Item->Id,
+                        'user_id' => $user->id,
                     ]);
 
                 // 7. Insert into the diart_visitor table
-                if ($insertResult != null) {
+                if ($diaryEntry != null) {
+                    foreach ($faces as $face) {
+                        $database->table('diary_visitor')
+                            ->insert([
+                                [
+                                    'diary_id' => $diaryEntry,
+                                    'visitor_id' => $face['visitor_id'],
+                                ]
+                            ]);
+                    }
 
-                }
-
-                if ($insertResult != null) {
                     return $response;
                 } else {
                     return $response->withStatus(500); // Could not insert into the diary
                 }
             }
+
         } else {
             return $response->withStatus(401); // TODO: Check this is correct
         }

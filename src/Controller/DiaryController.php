@@ -70,8 +70,10 @@ class DiaryController extends Controller
      *       "date": "2017-06-12T23:00:00Z",
      *       "image": "http://visuadiary.com/image.jpg",
      *       "people": [
-     *         "id": 1234,
-     *         "name": "Luke Fisher"
+     *         {
+     *           "id": 1234,
+     *           "name": "Luke Fisher"
+     *         }
      *       ]
      *     }
      *
@@ -91,7 +93,7 @@ class DiaryController extends Controller
                 ['id', '=', $args['id']],
                 ['user_id', '=', $user->id]
             ])
-            ->select('date', 'aws_s3_key as ')
+            ->select('date', 'aws_s3_key')
             ->first();
 
         if ($vist == null) {
@@ -100,9 +102,18 @@ class DiaryController extends Controller
 
         $people = $database->table('diary_visitor')
             ->where([
-                ['diary_id', '=', $visit->id]]
+                ['diary_id', '=', $visit->id]
             ])
-            ->join('visitor', '')
+            ->join('visitor', 'visitor.id', '=', 'diary_visitor.visitor_id')
+            ->select('visitor.id', 'visitor.name')
             ->get();
+
+        $result = [
+            'date' => $visit->date,
+            'people' => $people
+        ];
+
+        return $response->withHeader('Content-Type', 'application/json')
+            ->withBody(json_encode($result));
     }
 }

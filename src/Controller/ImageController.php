@@ -118,7 +118,7 @@ class ImageController extends Controller
                             ['id' => $args['id']],
                         ])
                         ->update([
-                            'aws_s3_key' => $key,
+                            'aws_s3_key'  => $key,
                             'aws_face_id' => $imagingResult->FaceRecords[0]->Face->FaceId,
                         ]);
 
@@ -191,6 +191,10 @@ class ImageController extends Controller
                     }
                 }
 
+                if (count($faces) == 0) {
+                    return $response->withStatus(400);
+                }
+
                 // 6. Insert the data into the datbase
                 $diaryEntry = $database->table('diary')
                     ->insertGetId([
@@ -204,9 +208,9 @@ class ImageController extends Controller
                         $database->table('diary_visitor')
                             ->insert([
                                 [
-                                    'diary_id' => $diaryEntry,
+                                    'diary_id'   => $diaryEntry,
                                     'visitor_id' => $face['visitor_id'],
-                                ]
+                                ],
                             ]);
                     }
 

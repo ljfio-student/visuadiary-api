@@ -14,7 +14,7 @@ $container['logger'] = function ($c) {
     return $logger;
 };
 
-$container['db'] = function ($c) {
+$container['database'] = function ($c) {
     $settings = $c->get('settings')['database'];
 
     $capsule = new \Illuminate\Database\Capsule\Manager;

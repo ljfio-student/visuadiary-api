@@ -43,15 +43,15 @@ class DiaryController extends Controller
                 ['user_id', '=', $user->id],
             ])
             ->join('diary_visitor', 'diary_visitor.diary_id', '=', 'diary.id')
-            ->select('diary.id', 'diary.date', 'count(diary_visitor.id) as people')
+            ->select('diary.id', 'diary.date', $database->getConnection()->raw('count(diary_visitor.visitor_id) as people'))
             ->groupBy('diary.id', 'diary.date')
             ->get();
 
-        return $response
-            ->withHeader('Content-Type', 'application/json')
-            ->withBody([
-                'visits' => json_encode($visits),
-            ]);
+        $response->getBody()->write(json_encode([
+            'visits' => $visits,
+        ]));
+
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
     /**
@@ -86,7 +86,7 @@ class DiaryController extends Controller
             return $response->withStatus(401); // Couldn't authenticate the current suer
         }
 
-        $database = $this->contaienr->get('database');
+        $database = $this->container->get('database');
 
         $visit = $database->table('diary')
             ->where([

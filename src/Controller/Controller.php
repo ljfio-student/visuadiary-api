@@ -6,9 +6,9 @@ use Psr\Container\ContainerInterface as Container;
 
 class Controller
 {
-    private $container;
+    protected $container;
 
-    public function __constructor(Container $container) {
+    public function __construct(Container $container) {
         $this->container = $container;
     }
 }

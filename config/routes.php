@@ -4,6 +4,7 @@
 $app->post('/login', '\Site\Controller\SessionController:login');
 $app->post('/register', '\Site\Controller\SessionController:register');
 
+$app->get('/visitor', '\Site\Controller\VisitorController:list');
 $app->get('/visitor/{id}', '\Site\Controller\VisitorController:get');
 $app->post('/visitor', '\Site\Controller\VisitorController:add');
 $app->put('/visitor/{id}', '\Site\Controller\VisitorController:update');
